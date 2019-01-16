@@ -27,8 +27,12 @@ func NewServer(p int, h string) Server {
 func (me *Server) loadFiles() {
 	me.files = make(map[string]bool)
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
-		fmt.Printf("Adding file: %s\n", path)
-		me.files[path] = true
+		if SupportedType(path) {
+			fmt.Printf("Adding file: %s\n", path)
+			me.files[path] = true
+		} else {
+			fmt.Printf("Skipping file: %s\n", path)
+		}
 		return nil
 	})
 	if err != nil {
@@ -37,7 +41,7 @@ func (me *Server) loadFiles() {
 }
 
 func (me *Server) m3uHandler(w http.ResponseWriter, r *http.Request) {
-	// w.Header().Add("Content-Type", "application/mpegurl")
+	w.Header().Add("Content-Type", "application/mpegurl")
 	for f, _ := range me.files {
 		fmt.Fprintf(w, "http://%s:%d/media/%s\n", me.hostname, me.port, f)
 	}
@@ -63,10 +67,10 @@ func (me *Server) reloadHandler(w http.ResponseWriter, r *http.Request) {
 
 func (me *Server) Start() {
 	me.loadFiles()
-	http.HandleFunc("/playlist.m3u8", me.m3uHandler)
+	http.HandleFunc("/playlist.m3u", me.m3uHandler)
 	http.HandleFunc("/reload", me.reloadHandler)
 	http.HandleFunc("/media/", me.mediaHandler)
-	fmt.Printf("Playlist: http://%s:%d/playlist.m3u8\n", me.hostname, me.port)
+	fmt.Printf("Playlist: http://%s:%d/playlist.m3u\n", me.hostname, me.port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", me.port), nil))
 }
 
