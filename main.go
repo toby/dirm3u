@@ -25,16 +25,19 @@ func NewServer(p int, h string) Server {
 }
 
 func (me *Server) m3uHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "TODO m3u")
+	// w.Header().Add("Content-Type", "application/mpegurl")
+	for f, _ := range me.files {
+		fmt.Fprintf(w, "http://%s:%d/media/%s\n", me.hostname, me.port, f)
+	}
 }
 
 func (me *Server) mediaHandler(w http.ResponseWriter, r *http.Request) {
 	f := path.Base(r.URL.Path)
 	_, ok := me.files[f]
 	if ok {
-		fmt.Fprintf(w, "found media %s", f)
+		http.ServeFile(w, r, f)
 	} else {
-		fmt.Fprintf(w, "did not find media %s", f)
+		http.NotFound(w, r)
 	}
 }
 
@@ -47,9 +50,9 @@ func (me *Server) Start() {
 	if err != nil {
 		panic(err)
 	}
-	http.HandleFunc("/playlist.m3u", me.m3uHandler)
+	http.HandleFunc("/playlist.m3u8", me.m3uHandler)
 	http.HandleFunc("/media/", me.mediaHandler)
-	fmt.Printf("Playlist: http://%s:%d/playlist.m3u\n", me.hostname, me.port)
+	fmt.Printf("Playlist: http://%s:%d/playlist.m3u8\n", me.hostname, me.port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", me.port), nil))
 }
 
