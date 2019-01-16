@@ -1,6 +1,6 @@
 # dirm3u
 
-Simple HTTP playlist and streaming media server.
+Simple HTTP media server. Turns a directory into a streamable playlist.
 
 ## Installing
 

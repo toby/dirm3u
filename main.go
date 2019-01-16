@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 )
 
 type File struct {
@@ -42,6 +43,7 @@ func (me *Server) loadFiles() {
 		}
 		return nil
 	})
+	sort.Sort(me.files)
 	if err != nil {
 		panic(err)
 	}
@@ -50,7 +52,7 @@ func (me *Server) loadFiles() {
 func (me *Server) m3uHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/mpegurl")
 	for _, f := range me.files {
-		fmt.Fprintf(w, "http://%s:%d/media/%s\n", me.hostname, me.port, f)
+		fmt.Fprintf(w, "http://%s:%d/media/%s\n", me.hostname, me.port, f.path)
 	}
 }
 
@@ -87,6 +89,18 @@ func (fs Files) ContainsPath(p string) bool {
 		}
 	}
 	return false
+}
+
+func (fs Files) Len() int {
+	return len(fs)
+}
+
+func (fs Files) Less(i int, j int) bool {
+	return fs[i].info.ModTime().Before(fs[j].info.ModTime())
+}
+
+func (fs Files) Swap(i int, j int) {
+	fs[i], fs[j] = fs[j], fs[i]
 }
 
 func main() {
