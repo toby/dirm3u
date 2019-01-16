@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"sort"
 )
@@ -57,7 +56,8 @@ func (me *Server) m3uHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (me *Server) mediaHandler(w http.ResponseWriter, r *http.Request) {
-	f := path.Base(r.URL.Path)
+	// trim `/media/`
+	f := r.URL.Path[7:]
 	if me.files.ContainsPath(f) {
 		http.ServeFile(w, r, f)
 	} else {
