@@ -59,7 +59,7 @@ func (me *Server) mediaHandler(w http.ResponseWriter, r *http.Request) {
 
 func (me *Server) reloadHandler(w http.ResponseWriter, r *http.Request) {
 	me.loadFiles()
-	fmt.Fprintf(w, "Reloaded %d files", len(me.files))
+	fmt.Fprintf(w, "Reloaded %d files\n", len(me.files))
 	for f, _ := range me.files {
 		fmt.Fprintf(w, "http://%s:%d/media/%s\n", me.hostname, me.port, f)
 	}
