@@ -65,7 +65,7 @@ func (me *Server) loadFiles() {
 func (me *Server) m3uHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/mpegurl")
 	for _, f := range me.Files {
-		fmt.Fprintf(w, "http://%s:%d/media/%s\n", me.Hostname, me.Port, f.Path)
+		fmt.Fprintf(w, "http://%s/media/%s\n", me.HostPort(), f.Path)
 	}
 }
 
@@ -90,7 +90,7 @@ func (me *Server) reloadHandler(w http.ResponseWriter, r *http.Request) {
 	me.loadFiles()
 	fmt.Fprintf(w, "Reloaded %d files\n", len(me.Files))
 	for _, f := range me.Files {
-		fmt.Fprintf(w, "http://%s:%d/media/%s\n", me.Hostname, me.Port, f.Path)
+		fmt.Fprintf(w, "http://%s/media/%s\n", me.HostPort(), f.Path)
 	}
 }
 
@@ -100,8 +100,12 @@ func (me *Server) Start() {
 	http.HandleFunc("/playlist.m3u", me.m3uHandler)
 	http.HandleFunc("/reload", me.reloadHandler)
 	http.HandleFunc("/media/", me.mediaHandler)
-	fmt.Printf("Playlist: http://%s:%d/playlist.m3u\n", me.Hostname, me.Port)
+	fmt.Printf("Serving: http://%s\n", me.HostPort())
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", me.Port), nil))
+}
+
+func (me *Server) HostPort() string {
+	return fmt.Sprintf("%s:%d", me.Hostname, me.Port)
 }
 
 func (f File) Type() string {
