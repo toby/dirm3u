@@ -63,6 +63,7 @@ var extensions = map[string]bool{
 	".WMA":   true,
 	".MKA":   true,
 	".M4P":   true,
+	".WEBM":  true,
 }
 
 func SupportedType(p string) bool {
