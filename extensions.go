@@ -5,7 +5,13 @@ import (
 	"strings"
 )
 
-var extensions = map[string]bool{
+var webExtensions = map[string]bool{
+	".WEBM": true,
+	".MP4":  true,
+	".OGG":  true,
+}
+
+var vlcExtensions = map[string]bool{
 	".ASX":   true,
 	".DTS":   true,
 	".GXF":   true,
@@ -66,8 +72,13 @@ var extensions = map[string]bool{
 	".WEBM":  true,
 }
 
-func SupportedType(p string) bool {
+func SupportedType(t string, p string) bool {
+	var ok bool
 	ext := strings.ToUpper(filepath.Ext(p))
-	_, ok := extensions[ext]
+	if t == "web" {
+		_, ok = webExtensions[ext]
+	} else {
+		_, ok = vlcExtensions[ext]
+	}
 	return ok
 }

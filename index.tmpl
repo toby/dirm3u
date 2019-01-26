@@ -27,16 +27,14 @@
         max-width: 100%;
         margin: 0px;
         padding: 0px;
-        border: 0px;
+        border: 1px solid grey;
       }
       #content {
-        max-width: 652px;
+        max-width: 656px;
         margin: auto;
       }
       .content-box {
         margin: 25px;
-        border: 1px solid grey;
-        overflow: auto;
       }
       .content-box-hero {
         border: 1px solid blue;
@@ -61,6 +59,11 @@
         list-style-type: none;
         margin: 0 0 0 15;
         padding: 0;
+      }
+      .media-info {
+        margin-top: 5px;
+        display: inline-block;
+        color: #FFFFFF;
       }
       a:link {
         color: #FFFFFF;
@@ -89,6 +92,7 @@
         <video controls="controls" preload="metadata">
           <source src="http://{{$.HostPort}}/media/{{.Path}}#t=0.5" type="video/{{.Type}}">
         </video>
+        <span class="media-info">{{.Base}}</span>
       </div>
     {{end}}
     </div>

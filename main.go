@@ -48,7 +48,7 @@ func NewServer(p int, h string) Server {
 func (me *Server) loadFiles() {
 	me.Files = make([]File, 0)
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
-		if SupportedType(path) {
+		if SupportedType("web", path) {
 			fmt.Printf("Adding file: %s\n", path)
 			me.Files = append(me.Files, File{info, path})
 		} else {
@@ -110,6 +110,10 @@ func (me *Server) HostPort() string {
 
 func (f File) Type() string {
 	return filepath.Ext(f.Path)[1:]
+}
+
+func (f File) Base() string {
+	return filepath.Base(f.Path)
 }
 
 func (fs Files) ContainsPath(p string) bool {
