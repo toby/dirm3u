@@ -22,7 +22,7 @@ type Server struct {
 	Port          int
 	Hostname      string
 	Files         Files
-	IndexTemplate *template.Template
+	indexTemplate *template.Template
 }
 
 func NewServer(p int, h string) Server {
@@ -34,7 +34,7 @@ func NewServer(p int, h string) Server {
 		Port:          p,
 		Hostname:      h,
 		Files:         make([]File, 0),
-		IndexTemplate: tmpl,
+		indexTemplate: tmpl,
 	}
 	return s
 }
@@ -64,7 +64,7 @@ func (me *Server) m3uHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (me *Server) indexHandler(w http.ResponseWriter, r *http.Request) {
-	err := me.IndexTemplate.Execute(w, me)
+	err := me.indexTemplate.Execute(w, me)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 	}
@@ -96,6 +96,10 @@ func (me *Server) Start() {
 	http.HandleFunc("/media/", me.mediaHandler)
 	fmt.Printf("Playlist: http://%s:%d/playlist.m3u\n", me.Hostname, me.Port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", me.Port), nil))
+}
+
+func (f File) Type() string {
+	return filepath.Ext(f.Path)[1:]
 }
 
 func (fs Files) ContainsPath(p string) bool {
