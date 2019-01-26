@@ -24,16 +24,16 @@
         width: 100px;
       }
       video {
+        max-width: 100%;
         margin: 0px;
         padding: 0px;
         border: 0px;
       }
       #content {
-        width: 652px;
+        max-width: 652px;
         margin: auto;
       }
       .content-box {
-        width: 600px;
         margin: 25px;
         border: 1px solid grey;
         overflow: auto;
@@ -86,7 +86,7 @@
     <div id="content">
     {{range .Files}}
       <div class="content-box">
-        <video width="600" controls="controls" preload="metadata">
+        <video controls="controls" preload="metadata">
           <source src="http://{{$.HostPort}}/media/{{.Path}}#t=0.5" type="video/{{.Type}}">
         </video>
       </div>
