@@ -89,7 +89,7 @@
     <div id="content">
     {{range .Files}}
       <div class="content-box">
-        <video controls="controls" preload="metadata">
+        <video controls="controls" loop=true preload="metadata">
           <source src="http://{{$.HostPort}}/media/{{.Path}}#t=0.5" type="video/{{.Type}}">
         </video>
         <span class="media-info">{{.Base}}</span>
