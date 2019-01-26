@@ -1,0 +1,21 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1,width=device-width">
+    <title>videos @ {{.Hostname}}:{{.Port}}</title>
+    <style type="text/css">
+      .video-container {
+        padding: 20px;
+      }
+    </style>    
+  </head>
+  <body>
+    {{range .Files}}
+      <div class="video-container">
+        <video width="400" controls="controls" preload="metadata">
+          <source src="http://{{$.Hostname}}:{{$.Port}}/media/{{.Path}}#t=0.5" type="video/mp4">
+        </video>
+      </div>
+    {{end}}
+  </body>
+</html>
