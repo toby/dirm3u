@@ -11,6 +11,8 @@ import (
 	"sort"
 )
 
+//go:generate go-bindata -nomemcopy index.tmpl
+
 type File struct {
 	Info os.FileInfo
 	Path string
@@ -26,7 +28,11 @@ type Server struct {
 }
 
 func NewServer(p int, h string) Server {
-	tmpl, err := template.New("index.tmpl").ParseFiles("index.tmpl")
+	data, err := Asset("index.tmpl")
+	if err != nil {
+		panic(err)
+	}
+	tmpl, err := template.New("index.tmpl").Parse(string(data[:]))
 	if err != nil {
 		panic(err)
 	}
