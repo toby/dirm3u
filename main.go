@@ -10,6 +10,9 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 //go:generate go-bindata -nomemcopy index.tmpl
@@ -28,12 +31,20 @@ type Server struct {
 	indexTemplate *template.Template
 }
 
+type Page struct {
+	Server *Server
+	Index  int
+}
+
 func NewServer(p int, h string) Server {
 	data, err := Asset("index.tmpl")
 	if err != nil {
 		panic(err)
 	}
-	tmpl, err := template.New("index.tmpl").Parse(string(data[:]))
+	fm := template.FuncMap{
+		"inc": func(i int) int { return i + 1 },
+	}
+	tmpl, err := template.New("index.tmpl").Funcs(fm).Parse(string(data[:]))
 	if err != nil {
 		panic(err)
 	}
@@ -63,23 +74,42 @@ func (me *Server) loadFiles() {
 	}
 }
 
-func (me *Server) m3uHandler(w http.ResponseWriter, r *http.Request) {
+func (me *Server) m3uHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Add("Content-Type", "application/mpegurl")
 	for _, f := range me.Files {
 		fmt.Fprintf(w, "http://%s/media/%s\n", me.HostPort(), f.Path)
 	}
 }
 
-func (me *Server) indexHandler(w http.ResponseWriter, r *http.Request) {
-	err := me.indexTemplate.Execute(w, me)
+func (me *Server) indexHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	p := &Page{Server: me}
+	n := ps.ByName("page")
+	var i int
+	var err error
+	if n == "" {
+		i = 1
+	} else {
+		i, err = strconv.Atoi(n)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+		}
+	}
+	if i > len(me.Files.Pages()) {
+		http.Error(w, "Page not found", 404)
+	}
+	p.Index = i - 1
+	err = me.indexTemplate.Execute(w, p)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 	}
 }
 
-func (me *Server) mediaHandler(w http.ResponseWriter, r *http.Request) {
-	// trim `/media/`
-	f := r.URL.Path[7:]
+func (me *Server) mediaHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	f := ps.ByName("path")
+	if len(f) < 1 {
+		http.NotFound(w, r)
+	}
+	f = f[1:]
 	if me.Files.ContainsPath(f) {
 		http.ServeFile(w, r, f)
 	} else {
@@ -87,7 +117,7 @@ func (me *Server) mediaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (me *Server) reloadHandler(w http.ResponseWriter, r *http.Request) {
+func (me *Server) reloadHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	me.loadFiles()
 	fmt.Fprintf(w, "Reloaded %d files\n", len(me.Files))
 	for _, f := range me.Files {
@@ -97,12 +127,14 @@ func (me *Server) reloadHandler(w http.ResponseWriter, r *http.Request) {
 
 func (me *Server) Start() {
 	me.loadFiles()
-	http.HandleFunc("/", me.indexHandler)
-	http.HandleFunc("/playlist.m3u", me.m3uHandler)
-	http.HandleFunc("/reload", me.reloadHandler)
-	http.HandleFunc("/media/", me.mediaHandler)
+	router := httprouter.New()
+	router.GET("/", me.indexHandler)
+	router.GET("/page/:page", me.indexHandler)
+	router.GET("/playlist.m3u", me.m3uHandler)
+	router.GET("/reload", me.reloadHandler)
+	router.GET("/media/*path", me.mediaHandler)
 	fmt.Printf("Serving: http://%s\n", me.HostPort())
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", me.Port), nil))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", me.Port), router))
 }
 
 func (me *Server) HostPort() string {
@@ -124,6 +156,24 @@ func (fs Files) ContainsPath(p string) bool {
 		}
 	}
 	return false
+}
+
+func (fs Files) Pages() [][]File {
+	var p []File
+	ps := make([][]File, 0)
+	for n, f := range fs {
+		if n%10 == 0 {
+			if n > 0 {
+				ps = append(ps, p)
+			}
+			p = make([]File, 0)
+		}
+		p = append(p, f)
+	}
+	if len(p) > 0 {
+		ps = append(ps, p)
+	}
+	return ps
 }
 
 func (fs Files) Len() int {

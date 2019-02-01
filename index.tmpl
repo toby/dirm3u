@@ -2,9 +2,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="initial-scale=1,width=device-width">
-    <title>videos@{{.HostPort}}</title>
+    <title>videos@{{.Server.HostPort}}</title>
     <style type="text/css">
       body {
+        color: #FFFFFF;
         background: #080808;
         font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
         /* font-family: Tahoma, Geneva, sans-serif; */
@@ -22,6 +23,9 @@
         margin: 0 0 0 10px;
         display: inline-block;
         width: 100px;
+      }
+      ol li {
+        display: inline-block;
       }
       video {
         max-width: 100%;
@@ -63,7 +67,6 @@
       .media-info {
         margin-top: 5px;
         display: inline-block;
-        color: #FFFFFF;
       }
       a:link {
         color: #FFFFFF;
@@ -83,18 +86,24 @@
   <body>
     <header class="site-header" role="banner">
       <ul>
-        <li><a class="playlist-link" href="http://{{.HostPort}}/playlist.m3u">Playlist.m3u</a></li>
+        <li><a class="playlist-link" href="http://{{.Server.HostPort}}/playlist.m3u">Playlist.m3u</a></li>
       </ul>
     </header>
     <div id="content">
-    {{range .Files}}
+    {{range (index .Server.Files.Pages .Index)}}
       <div class="content-box">
         <video controls="controls" loop=true preload="metadata">
-          <source src="http://{{$.HostPort}}/media/{{.Path}}#t=0.5" type="video/{{.Type}}">
+          <source src="http://{{$.Server.HostPort}}/media/{{.Path}}#t=0.5" type="video/{{.Type}}">
         </video>
         <span class="media-info">{{.Base}}</span>
       </div>
     {{end}}
+    <ol>
+      Page:
+      {{range $index,$value := .Server.Files.Pages}}
+        <li><a href="/page/{{inc $index}}">{{inc $index}}</a></li>
+      {{end}}
+    </ol>
     </div>
     <footer class="site-footer">
     </footer>
