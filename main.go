@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -90,7 +91,7 @@ func (me *Server) reloadHandler(w http.ResponseWriter, r *http.Request) {
 	me.loadFiles()
 	fmt.Fprintf(w, "Reloaded %d files\n", len(me.Files))
 	for _, f := range me.Files {
-		fmt.Fprintf(w, "http://%s/media/%s\n", me.HostPort(), f.Path)
+		fmt.Fprintf(w, "http://%s/media/%s\n", me.HostPort(), url.PathEscape(f.Path))
 	}
 }
 
