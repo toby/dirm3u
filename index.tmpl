@@ -81,6 +81,10 @@
       a:active {
         color: #EF57BB;
       }
+      a.current-link:link {
+        color: #FF67CB;
+        text-decoration: none;
+      }
     </style>    
   </head>
   <body>
@@ -101,7 +105,7 @@
     <ol>
       Page:
       {{range $index,$value := .Server.Files.Pages}}
-        <li><a href="/page/{{inc $index}}">{{inc $index}}</a></li>
+        <li><a {{if eq $index $.Index}}class="current-link"{{end}} href="/page/{{inc $index}}">{{inc $index}}</a></li>
       {{end}}
     </ol>
     </div>
