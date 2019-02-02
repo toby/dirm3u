@@ -96,7 +96,7 @@
     <div id="content">
     {{range (index .Server.Files.Pages .Index)}}
       <div class="content-box">
-        <video controls="controls" loop=true preload="metadata">
+        <video controls="true" loop=true preload="metadata">
           <source src="http://{{$.Server.HostPort}}/media/{{.Path}}#t=0.5" type="video/{{.Type}}">
         </video>
         <span class="media-info">{{.Base}}</span>
