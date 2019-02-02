@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -17,6 +18,8 @@ import (
 
 //go:generate go-bindata -nomemcopy index.tmpl
 
+const pageLimit = 5
+
 type File struct {
 	Info os.FileInfo
 	Path string
@@ -28,6 +31,7 @@ type Server struct {
 	Port          int
 	Hostname      string
 	Files         Files
+	Limit         int
 	indexTemplate *template.Template
 }
 
@@ -52,6 +56,7 @@ func NewServer(p int, h string) Server {
 		Port:          p,
 		Hostname:      h,
 		Files:         make([]File, 0),
+		Limit:         5,
 		indexTemplate: tmpl,
 	}
 	return s
@@ -133,6 +138,8 @@ func (me *Server) Start() {
 	router.GET("/playlist.m3u", me.m3uHandler)
 	router.GET("/reload", me.reloadHandler)
 	router.GET("/media/*path", me.mediaHandler)
+	fmt.Printf("Files: %d\n", len(me.Files))
+	fmt.Printf("Pages: %d\n", me.Files.PageNums())
 	fmt.Printf("Serving: http://%s\n", me.HostPort())
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", me.Port), router))
 }
@@ -158,11 +165,15 @@ func (fs Files) ContainsPath(p string) bool {
 	return false
 }
 
+func (fs Files) PageNums() int64 {
+	return int64(math.Ceil(float64(len(fs)) / pageLimit))
+}
+
 func (fs Files) Pages() [][]File {
 	var p []File
 	ps := make([][]File, 0)
 	for n, f := range fs {
-		if n%10 == 0 {
+		if n%pageLimit == 0 {
 			if n > 0 {
 				ps = append(ps, p)
 			}
