@@ -26,8 +26,21 @@ type File struct {
 type Files []*File
 
 type FileDB struct {
-	files []*File
+	files Files
 	tags  map[string][]*File
+}
+
+type Server struct {
+	Hostname      string
+	Port          int
+	Limit         int
+	indexTemplate *template.Template
+	db            *FileDB
+}
+
+type Page struct {
+	Server *Server
+	Index  int
 }
 
 func NewFileDB() FileDB {
@@ -37,21 +50,25 @@ func NewFileDB() FileDB {
 	}
 }
 
-func (db *FileDB) Files() []*File {
+func (db *FileDB) Files() Files {
 	return db.files
 }
 
-type Server struct {
-	Hostname      string
-	Port          int
-	Limit         int
-	Files         Files
-	indexTemplate *template.Template
-}
-
-type Page struct {
-	Server *Server
-	Index  int
+func (db *FileDB) loadFiles() {
+	db.files = make([]*File, 0)
+	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+		if SupportedType("web", path) {
+			fmt.Printf("Adding file: %s\n", path)
+			db.files = append(db.files, &File{info, path})
+		} else {
+			fmt.Printf("Skipping file: %s\n", path)
+		}
+		return nil
+	})
+	sort.Sort(db.files)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func NewServer(p int, h string, l int) Server {
@@ -66,35 +83,20 @@ func NewServer(p int, h string, l int) Server {
 	if err != nil {
 		panic(err)
 	}
+	db := NewFileDB()
 	s := Server{
 		Port:          p,
 		Hostname:      h,
 		Limit:         l,
 		indexTemplate: tmpl,
+		db:            &db,
 	}
 	return s
 }
 
-func (me *Server) loadFiles() {
-	me.Files = make([]*File, 0)
-	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
-		if SupportedType("web", path) {
-			fmt.Printf("Adding file: %s\n", path)
-			me.Files = append(me.Files, &File{info, path})
-		} else {
-			fmt.Printf("Skipping file: %s\n", path)
-		}
-		return nil
-	})
-	sort.Sort(me.Files)
-	if err != nil {
-		panic(err)
-	}
-}
-
 func (me *Server) m3uHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Add("Content-Type", "application/mpegurl")
-	for _, f := range me.Files {
+	for _, f := range me.db.Files() {
 		fmt.Fprintf(w, "http://%s/media/%s\n", me.HostPort(), f.Path)
 	}
 }
@@ -128,7 +130,7 @@ func (me *Server) mediaHandler(w http.ResponseWriter, r *http.Request, ps httpro
 		http.NotFound(w, r)
 	}
 	f = f[1:]
-	if me.Files.ContainsPath(f) {
+	if me.db.Files().ContainsPath(f) {
 		http.ServeFile(w, r, f)
 	} else {
 		http.NotFound(w, r)
@@ -136,22 +138,22 @@ func (me *Server) mediaHandler(w http.ResponseWriter, r *http.Request, ps httpro
 }
 
 func (me *Server) reloadHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	me.loadFiles()
-	fmt.Fprintf(w, "Reloaded %d files\n", len(me.Files))
-	for _, f := range me.Files {
+	me.db.loadFiles()
+	fmt.Fprintf(w, "Reloaded %d files\n", len(me.db.Files()))
+	for _, f := range me.db.Files() {
 		fmt.Fprintf(w, "http://%s/media/%s\n", me.HostPort(), url.PathEscape(f.Path))
 	}
 }
 
 func (me *Server) Start() {
-	me.loadFiles()
+	me.db.loadFiles()
 	router := httprouter.New()
 	router.GET("/", me.indexHandler)
 	router.GET("/page/:page", me.indexHandler)
 	router.GET("/playlist.m3u", me.m3uHandler)
 	router.GET("/reload", me.reloadHandler)
 	router.GET("/media/*path", me.mediaHandler)
-	fmt.Printf("Files: %d\n", len(me.Files))
+	fmt.Printf("Files: %d\n", len(me.db.Files()))
 	fmt.Printf("Pages: %d\n", me.PageNums())
 	fmt.Printf("Serving: http://%s\n", me.HostPort())
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", me.Port), router))
@@ -162,13 +164,13 @@ func (me *Server) HostPort() string {
 }
 
 func (me *Server) PageNums() int64 {
-	return int64(math.Ceil(float64(len(me.Files)) / float64(me.Limit)))
+	return int64(math.Ceil(float64(len(me.db.Files())) / float64(me.Limit)))
 }
 
 func (me *Server) Pages() [][]*File {
 	var p []*File
 	ps := make([][]*File, 0)
-	for n, f := range me.Files {
+	for n, f := range me.db.Files() {
 		if n%me.Limit == 0 {
 			if n > 0 {
 				ps = append(ps, p)
