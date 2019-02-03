@@ -25,6 +25,22 @@ type File struct {
 
 type Files []*File
 
+type FileDB struct {
+	files []*File
+	tags  map[string][]*File
+}
+
+func NewFileDB() FileDB {
+	return FileDB{
+		files: make([]*File, 0),
+		tags:  make(map[string][]*File),
+	}
+}
+
+func (db *FileDB) Files() []*File {
+	return db.files
+}
+
 type Server struct {
 	Hostname      string
 	Port          int
