@@ -94,7 +94,7 @@
       </ul>
     </header>
     <div id="content">
-    {{range (index .Server.Files.Pages .Index)}}
+    {{range (index .Server.Pages .Index)}}
       <div class="content-box">
         <video controls="true" loop=true preload="metadata">
           <source src="http://{{$.Server.HostPort}}/media/{{.Path}}#t=0.5" type="video/{{.Type}}">
@@ -104,7 +104,7 @@
     {{end}}
     <ol>
       Page:
-      {{range $index,$value := .Server.Files.Pages}}
+      {{range $index,$value := .Server.Pages}}
         <li><a {{if eq $index $.Index}}class="current-link"{{end}} href="/page/{{inc $index}}">{{inc $index}}</a></li>
       {{end}}
     </ol>

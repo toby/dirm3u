@@ -18,8 +18,6 @@ import (
 
 //go:generate go-bindata -nomemcopy index.tmpl
 
-const pageLimit = 5
-
 type File struct {
 	Info os.FileInfo
 	Path string
@@ -28,10 +26,10 @@ type File struct {
 type Files []File
 
 type Server struct {
-	Port          int
 	Hostname      string
-	Files         Files
+	Port          int
 	Limit         int
+	Files         Files
 	indexTemplate *template.Template
 }
 
@@ -40,7 +38,7 @@ type Page struct {
 	Index  int
 }
 
-func NewServer(p int, h string) Server {
+func NewServer(p int, h string, l int) Server {
 	data, err := Asset("index.tmpl")
 	if err != nil {
 		panic(err)
@@ -56,7 +54,7 @@ func NewServer(p int, h string) Server {
 		Port:          p,
 		Hostname:      h,
 		Files:         make([]File, 0),
-		Limit:         5,
+		Limit:         l,
 		indexTemplate: tmpl,
 	}
 	return s
@@ -99,7 +97,7 @@ func (me *Server) indexHandler(w http.ResponseWriter, r *http.Request, ps httpro
 			http.Error(w, err.Error(), 500)
 		}
 	}
-	if i > len(me.Files.Pages()) {
+	if i > len(me.Pages()) {
 		http.Error(w, "Page not found", 404)
 	}
 	p.Index = i - 1
@@ -139,13 +137,35 @@ func (me *Server) Start() {
 	router.GET("/reload", me.reloadHandler)
 	router.GET("/media/*path", me.mediaHandler)
 	fmt.Printf("Files: %d\n", len(me.Files))
-	fmt.Printf("Pages: %d\n", me.Files.PageNums())
+	fmt.Printf("Pages: %d\n", me.PageNums())
 	fmt.Printf("Serving: http://%s\n", me.HostPort())
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", me.Port), router))
 }
 
 func (me *Server) HostPort() string {
 	return fmt.Sprintf("%s:%d", me.Hostname, me.Port)
+}
+
+func (me *Server) PageNums() int64 {
+	return int64(math.Ceil(float64(len(me.Files)) / float64(me.Limit)))
+}
+
+func (me *Server) Pages() [][]File {
+	var p []File
+	ps := make([][]File, 0)
+	for n, f := range me.Files {
+		if n%me.Limit == 0 {
+			if n > 0 {
+				ps = append(ps, p)
+			}
+			p = make([]File, 0)
+		}
+		p = append(p, f)
+	}
+	if len(p) > 0 {
+		ps = append(ps, p)
+	}
+	return ps
 }
 
 func (f File) Type() string {
@@ -165,28 +185,6 @@ func (fs Files) ContainsPath(p string) bool {
 	return false
 }
 
-func (fs Files) PageNums() int64 {
-	return int64(math.Ceil(float64(len(fs)) / pageLimit))
-}
-
-func (fs Files) Pages() [][]File {
-	var p []File
-	ps := make([][]File, 0)
-	for n, f := range fs {
-		if n%pageLimit == 0 {
-			if n > 0 {
-				ps = append(ps, p)
-			}
-			p = make([]File, 0)
-		}
-		p = append(p, f)
-	}
-	if len(p) > 0 {
-		ps = append(ps, p)
-	}
-	return ps
-}
-
 func (fs Files) Len() int {
 	return len(fs)
 }
@@ -202,7 +200,8 @@ func (fs Files) Swap(i int, j int) {
 func main() {
 	p := flag.Int("p", 20202, "http server port")
 	h := flag.String("h", "localhost", "hostname")
+	l := flag.Int("l", 5, "limit results per page")
 	flag.Parse()
-	s := NewServer(*p, *h)
+	s := NewServer(*p, *h, *l)
 	s.Start()
 }
