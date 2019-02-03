@@ -199,7 +199,7 @@ func (fs Files) Swap(i int, j int) {
 func main() {
 	p := flag.Int("p", 20202, "http server port")
 	h := flag.String("h", "localhost", "hostname")
-	l := flag.Int("l", 5, "limit results per page")
+	l := flag.Int("l", 5, "limit results per page in web view")
 	flag.Parse()
 	s := NewServer(*p, *h, *l)
 	s.Start()
