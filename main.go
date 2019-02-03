@@ -23,7 +23,7 @@ type File struct {
 	Path string
 }
 
-type Files []File
+type Files []*File
 
 type Server struct {
 	Hostname      string
@@ -53,7 +53,6 @@ func NewServer(p int, h string, l int) Server {
 	s := Server{
 		Port:          p,
 		Hostname:      h,
-		Files:         make([]File, 0),
 		Limit:         l,
 		indexTemplate: tmpl,
 	}
@@ -61,11 +60,11 @@ func NewServer(p int, h string, l int) Server {
 }
 
 func (me *Server) loadFiles() {
-	me.Files = make([]File, 0)
+	me.Files = make([]*File, 0)
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if SupportedType("web", path) {
 			fmt.Printf("Adding file: %s\n", path)
-			me.Files = append(me.Files, File{info, path})
+			me.Files = append(me.Files, &File{info, path})
 		} else {
 			fmt.Printf("Skipping file: %s\n", path)
 		}
@@ -150,15 +149,15 @@ func (me *Server) PageNums() int64 {
 	return int64(math.Ceil(float64(len(me.Files)) / float64(me.Limit)))
 }
 
-func (me *Server) Pages() [][]File {
-	var p []File
-	ps := make([][]File, 0)
+func (me *Server) Pages() [][]*File {
+	var p []*File
+	ps := make([][]*File, 0)
 	for n, f := range me.Files {
 		if n%me.Limit == 0 {
 			if n > 0 {
 				ps = append(ps, p)
 			}
-			p = make([]File, 0)
+			p = make([]*File, 0)
 		}
 		p = append(p, f)
 	}
