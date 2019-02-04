@@ -44,13 +44,14 @@ type Page struct {
 }
 
 func NewFileDB() FileDB {
-	return FileDB{
-		tags: make(map[string]Files),
-	}
+	f := FileDB{}
+	f.loadFiles()
+	return f
 }
 
 func (db *FileDB) loadFiles() {
 	db.files = make([]*File, 0)
+	db.tags = make(map[string]Files)
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		ts, err := FileTags(path)
 		if err != nil {
@@ -106,12 +107,12 @@ func NewServer(p int, h string, l int) Server {
 		indexTemplate: tmpl,
 		db:            &db,
 	}
+	s.paginate()
 	return s
 }
 
-func (me *Server) makePages() {
+func (me *Server) paginate() {
 	var p Files
-	me.db.loadFiles()
 	ps := make([]Files, 0)
 	fsv, _ := me.db.ForTag("web-video")
 	fsi, _ := me.db.ForTag("web-image")
@@ -187,7 +188,8 @@ func (me *Server) mediaHandler(w http.ResponseWriter, r *http.Request, ps httpro
 }
 
 func (me *Server) reloadHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	me.makePages()
+	me.db.loadFiles()
+	me.paginate()
 	fmt.Fprintf(w, "Reloaded %d files\n", len(me.db.Files()))
 	for _, f := range me.db.Files() {
 		fmt.Fprintf(w, "http://%s/media/%s\n", me.HostPort(), url.PathEscape(f.Path))
@@ -195,7 +197,6 @@ func (me *Server) reloadHandler(w http.ResponseWriter, r *http.Request, _ httpro
 }
 
 func (me *Server) Start() {
-	me.makePages()
 	router := httprouter.New()
 	router.GET("/", me.indexHandler)
 	router.GET("/page/:page", me.indexHandler)
