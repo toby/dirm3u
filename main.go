@@ -34,6 +34,7 @@ type Server struct {
 	Hostname      string
 	Port          int
 	Limit         int
+	Pages         []Files
 	indexTemplate *template.Template
 	db            *FileDB
 }
@@ -74,7 +75,6 @@ func (db *FileDB) loadFiles() {
 		}
 		return nil
 	})
-	sort.Sort(db.files)
 	for k, _ := range db.tags {
 		fs, _ := db.tags[k]
 		sort.Sort(fs)
@@ -109,6 +109,29 @@ func NewServer(p int, h string, l int) Server {
 	return s
 }
 
+func (me *Server) makePages() {
+	var p Files
+	me.db.loadFiles()
+	ps := make([]Files, 0)
+	fs, ok := me.db.ForTag("web")
+	if !ok {
+		return
+	}
+	for n, f := range fs {
+		if n%me.Limit == 0 {
+			if n > 0 {
+				ps = append(ps, p)
+			}
+			p = make([]*File, 0)
+		}
+		p = append(p, f)
+	}
+	if len(p) > 0 {
+		ps = append(ps, p)
+	}
+	me.Pages = ps
+}
+
 func (me *Server) m3uHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Add("Content-Type", "application/mpegurl")
 	fs, ok := me.db.ForTag("vlc")
@@ -135,7 +158,7 @@ func (me *Server) indexHandler(w http.ResponseWriter, r *http.Request, ps httpro
 			return
 		}
 	}
-	if i > len(me.Pages()) {
+	if i > len(me.Pages) {
 		http.Error(w, "Page not found", 404)
 		return
 	}
@@ -161,7 +184,7 @@ func (me *Server) mediaHandler(w http.ResponseWriter, r *http.Request, ps httpro
 }
 
 func (me *Server) reloadHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	me.db.loadFiles()
+	me.makePages()
 	fmt.Fprintf(w, "Reloaded %d files\n", len(me.db.Files()))
 	for _, f := range me.db.Files() {
 		fmt.Fprintf(w, "http://%s/media/%s\n", me.HostPort(), url.PathEscape(f.Path))
@@ -169,7 +192,7 @@ func (me *Server) reloadHandler(w http.ResponseWriter, r *http.Request, _ httpro
 }
 
 func (me *Server) Start() {
-	me.db.loadFiles()
+	me.makePages()
 	router := httprouter.New()
 	router.GET("/", me.indexHandler)
 	router.GET("/page/:page", me.indexHandler)
@@ -192,28 +215,6 @@ func (me *Server) PageNums() int64 {
 		return 0
 	}
 	return int64(math.Ceil(float64(len(fs)) / float64(me.Limit)))
-}
-
-func (me *Server) Pages() [][]*File {
-	var p []*File
-	ps := make([][]*File, 0)
-	fs, ok := me.db.ForTag("web")
-	if !ok {
-		return ps
-	}
-	for n, f := range fs {
-		if n%me.Limit == 0 {
-			if n > 0 {
-				ps = append(ps, p)
-			}
-			p = make([]*File, 0)
-		}
-		p = append(p, f)
-	}
-	if len(p) > 0 {
-		ps = append(ps, p)
-	}
-	return ps
 }
 
 func (f File) Type() string {
