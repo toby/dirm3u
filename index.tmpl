@@ -33,6 +33,12 @@
         padding: 0px;
         border: 1px solid grey;
       }
+      img {
+        max-width: 100%;
+        margin: 0px;
+        padding: 0px;
+        border: 1px solid grey;
+      }
       #content {
         max-width: 656px;
         margin: auto;
@@ -85,7 +91,7 @@
         color: #FF67CB;
         text-decoration: none;
       }
-    </style>    
+    </style>
   </head>
   <body>
     <header class="site-header" role="banner">
@@ -96,10 +102,14 @@
     <div id="content">
     {{range (index .Server.Pages .Index)}}
       <div class="content-box">
-        <video controls="true" loop=true preload="metadata">
-          <source src="http://{{$.Server.HostPort}}/media/{{.Path}}#t=0.5" type="video/{{.Type}}">
-        </video>
-        <span class="media-info">{{.Base}}</span>
+        {{if (image .Path)}}
+            <img src="http://{{$.Server.HostPort}}/media/{{.Path}}">
+        {{else}}
+          <video controls="true" loop=true preload="metadata">
+            <source src="http://{{$.Server.HostPort}}/media/{{.Path}}#t=0.5" type="video/{{.Type}}">
+          </video>
+          <span class="media-info">{{.Base}}</span>
+        {{end}}
       </div>
     {{end}}
     <ol>

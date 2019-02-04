@@ -6,10 +6,17 @@ import (
 	"strings"
 )
 
-var webExtensions = map[string]bool{
+var webVideoExtensions = map[string]bool{
 	".webm": true,
 	".mp4":  true,
 	".ogg":  true,
+}
+
+var webImageExtensions = map[string]bool{
+	".jpg":  true,
+	".jpeg": true,
+	".gif":  true,
+	".png":  true,
 }
 
 var vlcExtensions = map[string]bool{
@@ -73,12 +80,25 @@ var vlcExtensions = map[string]bool{
 	".webm": true,
 }
 
+func Extension(p string) string {
+	return strings.ToLower(filepath.Ext(p))
+}
+
+func IsImage(p string) bool {
+	_, ok := webImageExtensions[Extension(p)]
+	return ok
+}
+
 func FileTags(p string) ([]string, error) {
 	ts := make([]string, 0)
-	ext := strings.ToLower(filepath.Ext(p))
-	_, ok := webExtensions[ext]
+	ext := Extension(p)
+	_, ok := webVideoExtensions[ext]
 	if ok {
-		ts = append(ts, "web")
+		ts = append(ts, "web-video")
+	}
+	_, ok = webImageExtensions[ext]
+	if ok {
+		ts = append(ts, "web-image")
 	}
 	_, ok = vlcExtensions[ext]
 	if ok {

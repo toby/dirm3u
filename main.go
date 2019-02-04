@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	"log"
-	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -50,15 +49,6 @@ func NewFileDB() FileDB {
 	}
 }
 
-func (db *FileDB) Files() Files {
-	return db.files
-}
-
-func (db *FileDB) ForTag(t string) (Files, bool) {
-	fs, err := db.tags[t]
-	return fs, err
-}
-
 func (db *FileDB) loadFiles() {
 	db.files = make([]*File, 0)
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
@@ -86,13 +76,23 @@ func (db *FileDB) loadFiles() {
 	}
 }
 
+func (db *FileDB) Files() Files {
+	return db.files
+}
+
+func (db *FileDB) ForTag(t string) (Files, bool) {
+	fs, err := db.tags[t]
+	return fs, err
+}
+
 func NewServer(p int, h string, l int) Server {
 	data, err := Asset("index.tmpl")
 	if err != nil {
 		panic(err)
 	}
 	fm := template.FuncMap{
-		"inc": func(i int) int { return i + 1 },
+		"inc":   func(i int) int { return i + 1 },
+		"image": IsImage,
 	}
 	tmpl, err := template.New("index.tmpl").Funcs(fm).Parse(string(data[:]))
 	if err != nil {
@@ -113,8 +113,11 @@ func (me *Server) makePages() {
 	var p Files
 	me.db.loadFiles()
 	ps := make([]Files, 0)
-	fs, ok := me.db.ForTag("web")
-	if !ok {
+	fsv, _ := me.db.ForTag("web-video")
+	fsi, _ := me.db.ForTag("web-image")
+	fs := append(fsv, fsi...)
+	sort.Sort(fs)
+	if len(fs) == 0 {
 		return
 	}
 	for n, f := range fs {
@@ -200,21 +203,13 @@ func (me *Server) Start() {
 	router.GET("/reload", me.reloadHandler)
 	router.GET("/media/*path", me.mediaHandler)
 	fmt.Printf("Files: %d\n", len(me.db.Files()))
-	fmt.Printf("Pages: %d\n", me.PageNums())
+	fmt.Printf("Pages: %d\n", len(me.Pages))
 	fmt.Printf("Serving: http://%s\n", me.HostPort())
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", me.Port), router))
 }
 
 func (me *Server) HostPort() string {
 	return fmt.Sprintf("%s:%d", me.Hostname, me.Port)
-}
-
-func (me *Server) PageNums() int64 {
-	fs, ok := me.db.ForTag("web")
-	if !ok {
-		return 0
-	}
-	return int64(math.Ceil(float64(len(fs)) / float64(me.Limit)))
 }
 
 func (f File) Type() string {
