@@ -29,15 +29,10 @@
       }
       video {
         max-width: 100%;
-        margin: 0px;
-        padding: 0px;
-        border: 1px solid grey;
       }
       img {
         max-width: 100%;
-        margin: 0px;
-        padding: 0px;
-        border: 1px solid grey;
+        object-fit: scale-down;
       }
       #content {
         max-width: 656px;
@@ -102,6 +97,15 @@
         color: #EF57BB;
       }
     </style>
+    <script>
+      function toggleFullscreen(e) {
+        if(document.webkitFullscreenElement === null) {
+          e.webkitRequestFullscreen()
+        } else {
+          document.webkitExitFullscreen()
+        }
+      }
+    </script>
   </head>
   <body>
     <header class="site-header" role="banner">
@@ -113,7 +117,7 @@
     {{range (index .Server.Pages .Index)}}
       <div class="content-box">
         {{if (image .Path)}}
-            <img src="http://{{$.Server.HostPort}}/media/{{.Path}}">
+            <img src="http://{{$.Server.HostPort}}/media/{{.Path}}" onclick="toggleFullscreen(this)">
         {{else}}
           <video controls="true" loop=true preload="metadata">
             <source src="http://{{$.Server.HostPort}}/media/{{.Path}}#t=0.5" type="video/{{.Type}}">
