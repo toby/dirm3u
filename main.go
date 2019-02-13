@@ -21,13 +21,13 @@ import (
 type File struct {
 	Info os.FileInfo
 	Path string
+	Tags []string
 }
 
 type Files []*File
 
 type FileDB struct {
 	files Files
-	tags  map[string]Files
 }
 
 type Server struct {
@@ -54,27 +54,17 @@ func NewFileDB() FileDB {
 
 func (db *FileDB) loadFiles() {
 	db.files = make([]*File, 0)
-	db.tags = make(map[string]Files)
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		ts, err := FileTags(path)
 		if err != nil {
 			fmt.Printf("Skipping file: %s\n", path)
 		} else {
 			fmt.Printf("Adding file: %s\n", path)
-			f := &File{info, path}
+			f := &File{info, path, ts}
 			db.files = append(db.files, f)
-			for _, t := range ts {
-				db.tags[t] = append(db.tags[t], f)
-			}
 		}
 		return nil
 	})
-	for k, _ := range db.tags {
-		fs, _ := db.tags[k]
-		sort.Sort(fs)
-		db.tags[k] = fs
-		fmt.Printf("File Tag: '%s' has %d files\n", k, len(db.tags[k]))
-	}
 	if err != nil {
 		panic(err)
 	}
@@ -84,9 +74,14 @@ func (db *FileDB) Files() Files {
 	return db.files
 }
 
-func (db *FileDB) ForTag(t string) (Files, bool) {
-	fs, err := db.tags[t]
-	return fs, err
+func (db *FileDB) ForTag(ts ...string) (Files, bool) {
+	fs := make([]*File, 0)
+	for _, f := range db.files {
+		if f.HasTag(ts...) {
+			fs = append(fs, f)
+		}
+	}
+	return fs, (len(fs) > 0)
 }
 
 func templateForName(n string) *template.Template {
@@ -162,10 +157,11 @@ func (me *Server) playerHandler(w http.ResponseWriter, r *http.Request, ps httpr
 		http.NotFound(w, r)
 	}
 	p = p[1:]
-	if me.db.Files().ContainsPath(p) {
+	f, ok := me.db.Files().ForPath(p)
+	if ok {
 		p := &Page{
 			Server: me,
-			File:   &File{Path: p},
+			File:   f,
 		}
 		err := me.playerTemplate.Execute(w, p)
 		if err != nil {
@@ -251,6 +247,17 @@ func (f File) Base() string {
 	return filepath.Base(f.Path)
 }
 
+func (f File) HasTag(ts ...string) bool {
+	for _, t := range f.Tags {
+		for _, tag := range ts {
+			if t == tag {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (fs Files) ContainsPath(p string) bool {
 	for _, f := range fs {
 		if f.Path == p {
@@ -258,6 +265,15 @@ func (fs Files) ContainsPath(p string) bool {
 		}
 	}
 	return false
+}
+
+func (fs Files) ForPath(p string) (*File, bool) {
+	for _, f := range fs {
+		if f.Path == p {
+			return f, true
+		}
+	}
+	return nil, false
 }
 
 func (fs Files) Len() int {

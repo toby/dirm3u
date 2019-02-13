@@ -2,7 +2,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="initial-scale=1,width=device-width">
-    <title>videos@{{.Server.HostPort}}</title>
+    <title>{{.File.Base}} | videos@{{.Server.HostPort}}</title>
     <style type="text/css">
       body {
         color: #FFFFFF;
@@ -110,6 +110,11 @@
   <body>
     <div id="content">
       {{.File.Path}}
+      <ul>
+      {{range .File.Tags}}
+        <li>{{.}}</li>
+      {{end}}
+      </ul>
     </div>
     <footer class="site-footer">
     </footer>
