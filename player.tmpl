@@ -108,30 +108,8 @@
     </script>
   </head>
   <body>
-    <header class="site-header" role="banner">
-      <ul>
-        <li><a class="playlist-link" href="http://{{.Server.HostPort}}/playlist.m3u">Playlist.m3u</a></li>
-      </ul>
-    </header>
     <div id="content">
-    {{range (index .Server.Pages .Index)}}
-      <div class="content-box">
-        {{if (image .Path)}}
-            <img src="http://{{$.Server.HostPort}}/media/{{.Path}}" onclick="toggleFullscreen(this)">
-        {{else}}
-          <video controls="true" loop=true preload="metadata">
-            <source src="http://{{$.Server.HostPort}}/media/{{.Path}}#t=0.5" type="video/{{.Type}}">
-          </video>
-          <span class="media-info">{{.Base}}</span>
-        {{end}}
-      </div>
-    {{end}}
-    <ol>
-      Page:
-      {{range $index,$value := .Server.Pages}}
-        <li><a {{if eq $index $.Index}}class="current-link"{{end}} href="/page/{{inc $index}}">{{inc $index}}</a></li>
-      {{end}}
-    </ol>
+      {{.File.Path}}
     </div>
     <footer class="site-footer">
     </footer>

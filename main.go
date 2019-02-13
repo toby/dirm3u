@@ -42,6 +42,7 @@ type Server struct {
 
 type Page struct {
 	Server *Server
+	File   *File
 	Index  int
 }
 
@@ -155,6 +156,27 @@ func (me *Server) m3uHandler(w http.ResponseWriter, r *http.Request, _ httproute
 	}
 }
 
+func (me *Server) playerHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	p := ps.ByName("path")
+	if len(p) < 1 {
+		http.NotFound(w, r)
+	}
+	p = p[1:]
+	if me.db.Files().ContainsPath(p) {
+		p := &Page{
+			Server: me,
+			File:   &File{Path: p},
+		}
+		err := me.playerTemplate.Execute(w, p)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+	} else {
+		http.NotFound(w, r)
+	}
+}
+
 func (me *Server) indexHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	p := &Page{Server: me}
 	n := ps.ByName("page")
@@ -207,9 +229,10 @@ func (me *Server) Start() {
 	router := httprouter.New()
 	router.GET("/", me.indexHandler)
 	router.GET("/page/:page", me.indexHandler)
+	router.GET("/media/*path", me.mediaHandler)
+	router.GET("/player/*path", me.playerHandler)
 	router.GET("/playlist.m3u", me.m3uHandler)
 	router.GET("/reload", me.reloadHandler)
-	router.GET("/media/*path", me.mediaHandler)
 	fmt.Printf("Files: %d\n", len(me.db.Files()))
 	fmt.Printf("Pages: %d\n", len(me.Pages))
 	fmt.Printf("Serving: http://%s\n", me.HostPort())
