@@ -16,7 +16,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-//go:generate go-bindata -nomemcopy index.tmpl
+//go:generate go-bindata -nomemcopy index.tmpl player.tmpl
 
 type File struct {
 	Info os.FileInfo
@@ -31,12 +31,13 @@ type FileDB struct {
 }
 
 type Server struct {
-	Hostname      string
-	Port          int
-	Limit         int
-	Pages         []Files
-	indexTemplate *template.Template
-	db            *FileDB
+	Hostname       string
+	Port           int
+	Limit          int
+	Pages          []Files
+	indexTemplate  *template.Template
+	playerTemplate *template.Template
+	db             *FileDB
 }
 
 type Page struct {
@@ -87,26 +88,31 @@ func (db *FileDB) ForTag(t string) (Files, bool) {
 	return fs, err
 }
 
-func NewServer(p int, h string, l int) Server {
-	data, err := Asset("index.tmpl")
-	if err != nil {
-		panic(err)
-	}
+func templateForName(n string) *template.Template {
+	idata, err := Asset(n)
 	fm := template.FuncMap{
 		"inc":   func(i int) int { return i + 1 },
 		"image": IsImage,
 	}
-	tmpl, err := template.New("index.tmpl").Funcs(fm).Parse(string(data[:]))
 	if err != nil {
 		panic(err)
 	}
+	t, err := template.New(n).Funcs(fm).Parse(string(idata[:]))
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
+func NewServer(p int, h string, l int) Server {
 	db := NewFileDB()
 	s := Server{
-		Port:          p,
-		Hostname:      h,
-		Limit:         l,
-		indexTemplate: tmpl,
-		db:            &db,
+		Port:           p,
+		Hostname:       h,
+		Limit:          l,
+		indexTemplate:  templateForName("index.tmpl"),
+		playerTemplate: templateForName("player.tmpl"),
+		db:             &db,
 	}
 	s.paginate()
 	return s

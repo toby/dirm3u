@@ -1,0 +1,139 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1,width=device-width">
+    <title>videos@{{.Server.HostPort}}</title>
+    <style type="text/css">
+      body {
+        color: #FFFFFF;
+        background: #080808;
+        font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+        /* font-family: Tahoma, Geneva, sans-serif; */
+        /* font-family: "Trebuchet MS", Helvetica, sans-serif; */
+        /* font-family:Verdana, Geneva, sans-serif; */
+      }
+      header ul {
+        list-style-type: none;
+        margin: 0 0 0 20px;
+        padding: 0;
+      }
+      header ul li {
+        border-style: solid;
+        border-width: 0px;
+        margin: 0 0 0 10px;
+        display: inline-block;
+        width: 100px;
+      }
+      ol li {
+        display: inline-block;
+      }
+      video {
+        max-width: 100%;
+      }
+      img {
+        max-width: 100%;
+        object-fit: scale-down;
+      }
+      #content {
+        max-width: 656px;
+        margin: auto;
+      }
+      .content-box {
+        margin: 25px;
+      }
+      .content-box-hero {
+        border: 1px solid blue;
+        height: 300px;
+        float: left;
+      }
+      .content-box-hero p {
+        padding: 10px;
+        width: 280px;
+      }
+      .content-box-logo {
+        border: 1px solid red;
+        width: 300px;
+        height: 150px;
+      }
+      .content-box-posts {
+        display: inline-block;
+        border: 1px solid green;
+      }
+      .content-box-posts ul {
+        border: 1px solid pink;
+        list-style-type: none;
+        margin: 0 0 0 15;
+        padding: 0;
+      }
+      .media-info {
+        margin-top: 5px;
+        display: inline-block;
+      }
+      a:link {
+        color: #FFFFFF;
+        text-decoration: none;
+      }
+      a:visited {
+        color: #F0F0F0;
+      }
+      a:hover {
+        color: #FF67CB;
+      }
+      a:active {
+        color: #EF57BB;
+      }
+      a.current-link:link {
+        color: #FF67CB;
+        text-decoration: none;
+      }
+      a.current-link:visited {
+        color: #FF67CB;
+        text-decoration: none;
+      }
+      a.current-link:hover {
+        color: #FF67CB;
+      }
+      a.current-link:active {
+        color: #EF57BB;
+      }
+    </style>
+    <script>
+      function toggleFullscreen(e) {
+        if(document.webkitFullscreenElement === null) {
+          e.webkitRequestFullscreen()
+        } else {
+          document.webkitExitFullscreen()
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header class="site-header" role="banner">
+      <ul>
+        <li><a class="playlist-link" href="http://{{.Server.HostPort}}/playlist.m3u">Playlist.m3u</a></li>
+      </ul>
+    </header>
+    <div id="content">
+    {{range (index .Server.Pages .Index)}}
+      <div class="content-box">
+        {{if (image .Path)}}
+            <img src="http://{{$.Server.HostPort}}/media/{{.Path}}" onclick="toggleFullscreen(this)">
+        {{else}}
+          <video controls="true" loop=true preload="metadata">
+            <source src="http://{{$.Server.HostPort}}/media/{{.Path}}#t=0.5" type="video/{{.Type}}">
+          </video>
+          <span class="media-info">{{.Base}}</span>
+        {{end}}
+      </div>
+    {{end}}
+    <ol>
+      Page:
+      {{range $index,$value := .Server.Pages}}
+        <li><a {{if eq $index $.Index}}class="current-link"{{end}} href="/page/{{inc $index}}">{{inc $index}}</a></li>
+      {{end}}
+    </ol>
+    </div>
+    <footer class="site-footer">
+    </footer>
+  </body>
+</html>
