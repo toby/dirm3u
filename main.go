@@ -41,9 +41,10 @@ type Server struct {
 }
 
 type Page struct {
-	Server *Server
-	File   *File
-	Index  int
+	Server   *Server
+	File     *File
+	NextFile *File
+	Index    int
 }
 
 func NewFileDB() FileDB {
@@ -157,11 +158,12 @@ func (me *Server) playerHandler(w http.ResponseWriter, r *http.Request, ps httpr
 		http.NotFound(w, r)
 	}
 	p = p[1:]
-	f, ok := me.db.Files().ForPath(p)
-	if ok {
+	f, fn := me.db.Files().PlaylistLinked(p)
+	if f != nil {
 		p := &Page{
-			Server: me,
-			File:   f,
+			Server:   me,
+			File:     f,
+			NextFile: fn,
 		}
 		err := me.playerTemplate.Execute(w, p)
 		if err != nil {
@@ -274,6 +276,19 @@ func (fs Files) ForPath(p string) (*File, bool) {
 		}
 	}
 	return nil, false
+}
+
+func (fs Files) PlaylistLinked(p string) (*File, *File) {
+	for i, f := range fs {
+		if f.Path == p {
+			if i < (len(fs) - 1) {
+				return f, fs[i+1]
+			} else {
+				return f, nil
+			}
+		}
+	}
+	return nil, nil
 }
 
 func (fs Files) Len() int {

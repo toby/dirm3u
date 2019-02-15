@@ -115,6 +115,9 @@
         <li>{{.}}</li>
       {{end}}
       </ul>
+      {{if .NextFile}}
+      Next: <a href="/player/{{.NextFile.Path}}">{{.NextFile.Path}}</a>
+      {{end}}
     </div>
     <footer class="site-footer">
     </footer>
