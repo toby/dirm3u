@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -242,11 +243,31 @@ func (fs Files) Swap(i int, j int) {
 	fs[i], fs[j] = fs[j], fs[i]
 }
 
+func findPort(p int) (int, error) {
+	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", "localhost", p))
+	if err != nil {
+		return 0, err
+	}
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil && p == 0 {
+		return 0, err
+	}
+	if err != nil {
+		return findPort(0)
+	}
+	defer l.Close()
+	return l.Addr().(*net.TCPAddr).Port, nil
+}
+
 func main() {
-	p := flag.Int("p", 20202, "http server port")
+	pf := flag.Int("p", 20202, "http server port")
 	h := flag.String("h", "localhost", "hostname")
 	l := flag.Int("l", 5, "limit results per page in web view")
 	flag.Parse()
-	s := NewServer(*p, *h, *l)
+	p, err := findPort(*pf)
+	if err != nil {
+		panic(err)
+	}
+	s := NewServer(p, *h, *l)
 	s.Start()
 }
