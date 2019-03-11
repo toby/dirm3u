@@ -109,14 +109,18 @@
   </head>
   <body>
     <div id="content">
-      {{.File.Path}}
-      <ul>
-      {{range .File.Tags}}
-        <li>{{.}}</li>
-      {{end}}
-      </ul>
+      <div class="content-box">
+        {{if (image .File.Path)}}
+            <img src="http://{{$.Server.HostPort}}/media/{{.File.Path}}" onclick="toggleFullscreen(this)">
+        {{else}}
+          <video controls="true" loop=true preload="metadata">
+            <source src="http://{{$.Server.HostPort}}/media/{{.File.Path}}#t=0.5" type="video/{{.File.Type}}">
+          </video>
+        {{end}}
+      </div>
+      <div>{{.File.Base}}</div>
       {{if .NextFile}}
-      Next: <a href="/player/{{.NextFile.Path}}">{{.NextFile.Path}}</a>
+        <div>Next: <a href="/player/{{.NextFile.Path}}">{{.NextFile.Path}}</a></div>
       {{end}}
     </div>
     <footer class="site-footer">
