@@ -122,8 +122,8 @@
           <video controls="true" loop=true preload="metadata">
             <source src="http://{{$.Server.HostPort}}/media/{{.Path}}#t=0.5" type="video/{{.Type}}">
           </video>
-          <span class="media-info"><a href="http://{{$.Server.HostPort}}/player/{{.Path}}">{{.Base}}</a></span>
         {{end}}
+        <span class="media-info"><a href="http://{{$.Server.HostPort}}/player/{{.Path}}">{{.Base}}</a></span>
       </div>
     {{end}}
     <ol>
