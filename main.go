@@ -89,6 +89,7 @@ func templateForName(n string) *template.Template {
 	idata, err := Asset(n)
 	fm := template.FuncMap{
 		"inc":   func(i int) int { return i + 1 },
+		"dec":   func(i int) int { return i - 1 },
 		"image": IsImage,
 	}
 	if err != nil {

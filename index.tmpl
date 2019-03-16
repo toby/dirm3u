@@ -24,6 +24,9 @@
         display: inline-block;
         width: 100px;
       }
+      ol {
+        padding: 0;
+      }
       ol li {
         display: inline-block;
       }
@@ -33,6 +36,9 @@
       img {
         max-width: 100%;
         object-fit: scale-down;
+      }
+      .inactive {
+        color: #807070;
       }
       #content {
         max-width: 656px;
@@ -122,17 +128,28 @@
           <video controls="true" loop=true preload="metadata">
             <source src="http://{{$.Server.HostPort}}/media/{{.Path}}#t=0.5" type="video/{{.Type}}">
           </video>
+          <span class="media-info"><a href="http://{{$.Server.HostPort}}/player/{{.Path}}">{{.Base}}</a></span>
         {{end}}
-        <span class="media-info"><a href="http://{{$.Server.HostPort}}/player/{{.Path}}">{{.Base}}</a></span>
       </div>
     {{end}}
-    <ol>
-      Page:
-      {{range $index,$value := .Server.Pages}}
-        <li><a {{if eq $index $.Index}}class="current-link"{{end}} href="/page/{{inc $index}}">{{inc $index}}</a></li>
+    <div>
+      {{if gt .Index 0}}
+        <a href="/page/{{.Index}}">< Previous</a>
+      {{else}}
+        <span class="inactive">< Previous</a>
       {{end}}
-    </ol>
+      |
+      {{if gt (len .Server.Pages) (inc .Index)}}
+        <a href="/page/{{inc (inc .Index)}}">Next ></a>
+      {{else}}
+        <span class="inactive">Next ></a>
+      {{end}}
     </div>
+    <ol>
+    {{range $index,$value := .Server.Pages}}
+      <li><a {{if eq $index $.Index}}class="current-link"{{end}} href="/page/{{inc $index}}">{{inc $index}}</a></li>
+    {{end}}
+    </ol>
     <footer class="site-footer">
     </footer>
   </body>
