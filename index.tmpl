@@ -90,6 +90,27 @@
           document.webkitExitFullscreen()
         }
       }
+
+      var videos = document.getElementsByTagName("video"), fraction = 0.8;
+      function checkVisible() {
+        for(var i = 0; i < videos.length; i++) {
+          var video = videos[i];
+          var x = video.offsetLeft, y = video.offsetTop, w = video.offsetWidth, h = video.offsetHeight, r = x + w, //right
+            b = y + h, //bottom
+            visibleX, visibleY, visible;
+          visibleX = Math.max(0, Math.min(w, window.pageXOffset + window.innerWidth - x, r - window.pageXOffset));
+          visibleY = Math.max(0, Math.min(h, window.pageYOffset + window.innerHeight - y, b - window.pageYOffset));
+          visible = visibleX * visibleY / (w * h);
+          if (visible > fraction) {
+            video.preload = "metadata";
+          } else {
+            video.preload = "none";
+          }
+        }
+      }
+      window.addEventListener('load', checkVisible, false);
+      window.addEventListener('scroll', checkVisible, false);
+      window.addEventListener('resize', checkVisible, false);
     </script>
   </head>
   <body>
@@ -101,8 +122,8 @@
         {{if (image .Path)}}
           <img src="http://{{$.Server.HostPort}}/media/{{.Path}}" onclick="toggleFullscreen(this)">
         {{else}}
-          <video controls="true" loop=true preload="metadata">
-            <source src="http://{{$.Server.HostPort}}/media/{{.Path}}#t=0.5" type="video/{{.Type}}">
+          <video controls="true" loop=true preload="none">
+            <source src="http://{{$.Server.HostPort}}/media/{{.Path}}" type="video/{{.Type}}">
           </video>
           <span class="media-info"><a href="http://{{$.Server.HostPort}}/player/{{.Path}}">{{.Base}}</a></span>
         {{end}}
